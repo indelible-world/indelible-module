@@ -1,5 +1,5 @@
 {
-  "name": "indelible-protocol",
+  "name": "@indelible-world/indelible-protocol",
   "version": "0.1.0",
   "description": "Client library for the Indelible Protocol — attest, verify, delegate, and prove quotes from on-chain content attestations.",
   "type": "module",
@@ -34,5 +34,8 @@
   "dependencies": {
     "@openzeppelin/merkle-tree": "^1.0.8",
     "multiformats": "^13.4.2"
+  },
+  "publishConfig": {
+    "access": "public"
   }
 }
