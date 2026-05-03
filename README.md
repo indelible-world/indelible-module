@@ -1,6 +1,6 @@
-# indelible-protocol
+# indelible
 
-JavaScript client library for the [Indelible Protocol](https://indelible.world): on-chain
+JavaScript client library for the [Indelible Standard](https://indelible.world): on-chain
 content attestations, delegation, ENS bindings, and Merkle-based quote proofs.
 
 This package extracts the core logic from the [`indelible-static`](https://github.com/indelible-world/indelible-static)
@@ -10,7 +10,7 @@ or back-end service.
 ## Installation
 
 ```bash
-npm install indelible-protocol viem
+npm install indelible viem
 ```
 
 `viem` is a peer dependency — bring your own version (`^2.0.0`).
@@ -22,7 +22,7 @@ npm install indelible-protocol viem
 ```js
 import { createPublicClient, http } from 'viem';
 import { sepolia } from 'viem/chains';
-import { verifyCid } from 'indelible-protocol';
+import { verifyCid } from 'indelible';
 
 const publicClient = createPublicClient({
     chain: sepolia,
@@ -36,7 +36,7 @@ console.log(result.headline, result.details);
 ### Verify a quote proof JSON
 
 ```js
-import { verifyQuoteProof } from 'indelible-protocol';
+import { verifyQuoteProof } from 'indelible';
 
 const proofData = JSON.parse(await file.text());
 const { verification, quoteText, allProofsValid } = await verifyQuoteProof(
@@ -50,7 +50,7 @@ const { verification, quoteText, allProofsValid } = await verifyQuoteProof(
 ```js
 import { createWalletClient, createPublicClient, custom } from 'viem';
 import { sepolia } from 'viem/chains';
-import { commitAttestation, revealAttestation } from 'indelible-protocol';
+import { commitAttestation, revealAttestation } from 'indelible';
 
 const walletClient = createWalletClient({
     account,
@@ -78,7 +78,7 @@ const { attestationIndex } = await revealAttestation({
 ### Generate a quote proof
 
 ```js
-import { proveQuote, downloadJson } from 'indelible-protocol';
+import { proveQuote, downloadJson } from 'indelible';
 
 const { proofJson, onChain } = await proveQuote({
     articleText,
@@ -91,12 +91,12 @@ downloadJson(proofJson, 'quote-proof.json'); // browser only
 
 ## API surface
 
-### Constants — `indelible-protocol/constants`
+### Constants — `indelible/constants`
 - `TAANQ_ADDRESS`, `ENS_INDELIBLE_ADDRESS`, `ENS_REGISTRY_ADDRESS`
 - `MERKLE_SPLIT` — chunk size used for Merkle quote proofs (46 chars)
 - `RESULT_CODE` — `{ NOT_FOUND, VERIFIED, UNVERIFIED, REVOKED, WARNING }`
 
-### Utilities — `indelible-protocol/utils`
+### Utilities — `indelible/utils`
 - `hashContent(data)` / `hexHashContent(data)` — SHA-256 of bytes/string
 - `createRawCIDv1(data)` — base32 CIDv1 of content
 - `getCIDFromHash(hash)` / `getCIDFromRawDigest(bytes)` — CID from raw digest
@@ -106,14 +106,14 @@ downloadJson(proofJson, 'quote-proof.json'); // browser only
 - `prettifyTimestamp(ts)` — formatted local time string
 - `downloadJson(data, filename)` — browser file download
 
-### Verification — `indelible-protocol/verify`
+### Verification — `indelible/verify`
 - `verifyCid(publicClient, cid, authority?)` → `VerificationResult`
 - `verifyQuoteProof(publicClient, proofData)` → `{ verification, quoteText, allProofsValid }`
 - `getAttestationByIndex(publicClient, index)`
 - `cidToAttestationIndices`, `cidAndAddressToAttestationIndices`
 - Classes: `Attestation`, `VerificationResult`
 
-### Writes & publishing — `indelible-protocol/publish`
+### Writes & publishing — `indelible/publish`
 - `commitAttestation({ walletClient, publicClient, content, account, authority?, parentIpfsHash? })`
 - `revealAttestation({ walletClient, publicClient, pendingCommit, account })`
 - `revokeAttestation({ walletClient, publicClient, attestationId, account })`
@@ -126,8 +126,8 @@ downloadJson(proofJson, 'quote-proof.json'); // browser only
 - `generateSalt()`, `buildSaltedHash(ipfsHash, address, salt)`
 
 ### ABIs
-- `indelible-protocol/abi/taanq` — taanq attestation contract ABI (JSON)
-- `indelible-protocol/abi/ens`   — Indelible ENS contract ABI (JSON)
+- `indelible/abi/taanq` — taanq attestation contract ABI (JSON)
+- `indelible/abi/ens`   — Indelible ENS contract ABI (JSON)
 
 ## Notes
 
