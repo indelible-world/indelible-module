@@ -19,6 +19,8 @@ export {
     buildTree,
     dnsEncodeName,
     decodeCidToIpfsHash,
+    attestationToRef,
+    verificationResultToRef,
     downloadJson,
 } from './utils.js';
 

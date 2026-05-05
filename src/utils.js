@@ -78,6 +78,37 @@ export function decodeCidToIpfsHash(cidStr) {
     return toHex(new Uint8Array(parsed.multihash.digest));
 }
 
+/**
+ * Build a verify/quote reference object from an Attestation instance.
+ *
+ * @param {import('./verify.js').Attestation} attestation
+ * @param {number} chainId
+ * @returns {{ ipfsCid: string, chainId: number, authority: string, attestationIndex: number }}
+ */
+export function attestationToRef(attestation, chainId) {
+    return {
+        ipfsCid: attestation.cid,
+        chainId,
+        authority: attestation.authority,
+        attestationIndex: Number(attestation.index),
+    };
+}
+
+/**
+ * Build a verify/quote reference object from the last attestation in a VerificationResult.
+ *
+ * @param {import('./verify.js').VerificationResult} verificationResult
+ * @param {number} chainId
+ * @returns {{ ipfsCid: string, chainId: number, authority: string, attestationIndex: number }}
+ */
+export function verificationResultToRef(verificationResult, chainId) {
+    const attestation = verificationResult.attestations[verificationResult.attestations.length - 1];
+    if (!attestation) {
+        throw new Error('VerificationResult contains no attestations.');
+    }
+    return attestationToRef(attestation, chainId);
+}
+
 // Browser-only: trigger download of an object as a JSON file.
 export function downloadJson(data, filename) {
     if (typeof document === 'undefined') {
