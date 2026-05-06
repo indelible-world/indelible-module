@@ -7,9 +7,10 @@ on:
 jobs:
   publish:
     runs-on: ubuntu-latest
+    environment: npm-publish
     permissions:
       contents: read
-      id-token: write  # required for OIDC
+      id-token: write  # required for OIDC trusted publishing
     steps:
       - uses: actions/checkout@v4
 
@@ -18,6 +19,8 @@ jobs:
           node-version: '20'
           registry-url: 'https://registry.npmjs.org'
 
+      - run: npm install -g npm@latest
+
       - run: npm ci
 
-      - run: npm publish --provenance --access public
+      - run: npm publish --access public
