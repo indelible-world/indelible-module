@@ -2,7 +2,7 @@ import { StandardMerkleTree } from '@openzeppelin/merkle-tree';
 import { fromHex } from 'viem';
 
 import taanqAbi from './abi/taanqAbi.json';
-import { TAANQ_ADDRESS, RESULT_CODE } from './constants.js';
+import { TAANQ_ADDRESS, RESULT_CODE, getPrimaryResultCode, getResultCodeCssClass } from './constants.js';
 import { decodeCidToIpfsHash, getCIDFromRawDigest, prettifyTimestamp } from './utils.js';
 
 /**
@@ -29,6 +29,21 @@ export class VerificationResult {
         this.headline = headline;
         this.details = details;
         this.attestations = attestations;
+    }
+
+    /**
+     * The single highest-priority code from `resultCode`, suitable for
+     * choosing UI styling. See `getPrimaryResultCode` for priority order.
+     */
+    get primaryResultCode() {
+        return getPrimaryResultCode(this.resultCode);
+    }
+
+    /**
+     * CSS class associated with the primary result code, e.g. `'result-verified'`.
+     */
+    get cssClass() {
+        return getResultCodeCssClass(this.primaryResultCode);
     }
 }
 
@@ -105,6 +120,32 @@ export async function getAttestationByIndex(publicClient, index, opts = {}) {
         args: [index],
     });
     return attestationFromRpc(rpcResponse, index);
+}
+
+/**
+ * Verify using a plain reference object (as produced by `attestationToRef` / `verificationResultToRef`).
+ * When `attestationIndex` is present the attestation is fetched directly by index; otherwise falls
+ * back to a full CID lookup via `verifyCid`.
+ *
+ * @param {import('viem').PublicClient} publicClient
+ * @param {{ ipfsCid: string, authority?: `0x${string}`, attestationIndex?: number }} ref
+ * @param {{ taanqAddress?: `0x${string}` }} [opts]
+ * @returns {Promise<VerificationResult>}
+ */
+export async function verifyRef(publicClient, ref, opts = {}) {
+    if (ref.attestationIndex != null) {
+        const attestation = await getAttestationByIndex(publicClient, ref.attestationIndex, opts);
+        const isRevoked = attestation.revokedAt != 0;
+        return new VerificationResult(
+            isRevoked ? [RESULT_CODE.REVOKED] : [RESULT_CODE.VERIFIED],
+            isRevoked ? 'Attestation Revoked' : 'Verified',
+            isRevoked
+                ? [`Revoked at ${prettifyTimestamp(attestation.revokedAt)}`]
+                : [`Published by ${attestation.authority} at ${prettifyTimestamp(attestation.timestamp)}.`],
+            [attestation],
+        );
+    }
+    return verifyCid(publicClient, ref.ipfsCid, ref.authority ?? null, opts);
 }
 
 /**

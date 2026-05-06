@@ -11,6 +11,7 @@
     "./verify": "./src/verify.js",
     "./publish": "./src/publish.js",
     "./constants": "./src/constants.js",
+    "./chains": "./src/chains.js",
     "./abi/taanq": "./src/abi/taanqAbi.json",
     "./abi/ens": "./src/abi/ensAbi.json"
   },

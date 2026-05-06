@@ -5,7 +5,23 @@ export {
     ENS_REGISTRY_ADDRESS,
     MERKLE_SPLIT,
     RESULT_CODE,
+    RESULT_CODE_INFO,
+    RESULT_CODE_PRIORITY,
+    getPrimaryResultCode,
+    getResultCodeCssClass,
 } from './constants.js';
+
+// Multi-chain client construction
+export {
+    CHAINS,
+    DEFAULT_RPC_URLS,
+    PUBLIC_RPC_URLS,
+    CHAIN_DISPLAY_NAMES,
+    DEFAULT_ALCHEMY_KEY,
+    getChainKeyById,
+    getChainById,
+    createIndelibleClient,
+} from './chains.js';
 
 // Utilities (CID, hashing, Merkle, ENS DNS encoding, browser download)
 export {
@@ -28,6 +44,7 @@ export {
 export {
     Attestation,
     VerificationResult,
+    verifyRef,
     verifyCid,
     verifyQuoteProof,
     getAttestationByIndex,
