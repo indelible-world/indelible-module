@@ -52,6 +52,33 @@ export {
     cidAndAddressToAttestationIndices,
 } from './verify.js';
 
+// ENS integration — read-side helpers grouped under the `ens` namespace.
+// Usage: import { ens } from 'indelible'
+//        const bindings = await ens.getBindingsByAddress(client, address)
+import {
+    EnsVerification,
+    decodeDnsName,
+    getVerification,
+    getAddrToBindings,
+    getNodeToBinding,
+    resolveIndelibleAddress,
+    getBindingsByAddress,
+    getBindingByName,
+    getBindingByNode,
+} from './ens.js';
+
+export const ens = {
+    EnsVerification,
+    decodeDnsName,
+    getVerification,
+    getAddrToBindings,
+    getNodeToBinding,
+    resolveIndelibleAddress,
+    getBindingsByAddress,
+    getBindingByName,
+    getBindingByNode,
+};
+
 // Publishing / writing actions
 export {
     generateSalt,
