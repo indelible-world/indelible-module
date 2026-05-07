@@ -209,9 +209,13 @@ export async function resolveIndelibleAddress(client, node, opts = {}) {
  * Iterates `addrToBindings` until a zero sentinel is returned, then fetches
  * each corresponding `verifications` record.
  *
+ * If `opts.timestamp` is provided (Unix seconds), only bindings that were
+ * active at that point in time are returned. Omit it to get all bindings
+ * regardless of status.
+ *
  * @param {import('viem').PublicClient} client
  * @param {`0x${string}`} address
- * @param {{ ensIndelibleAddress?: `0x${string}` }} [opts]
+ * @param {{ ensIndelibleAddress?: `0x${string}`, timestamp?: number }} [opts]
  * @returns {Promise<EnsVerification[]>}
  */
 export async function getBindingsByAddress(client, address, opts = {}) {
@@ -223,6 +227,9 @@ export async function getBindingsByAddress(client, address, opts = {}) {
         const verification = await getVerification(client, bindingIndex, opts);
         if (verification) bindings.push(verification);
         i++;
+    }
+    if (opts.timestamp !== undefined) {
+        return bindings.filter(b => b.isActiveAt(opts.timestamp));
     }
     return bindings;
 }
