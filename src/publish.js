@@ -391,15 +391,23 @@ export async function registerEnsBinding({
         throw new Error('No resolver set for this ENS name. Please configure a resolver first.');
     }
 
-    const existingBinding = await publicClient.readContract({
+    const existingBindingIndex = await publicClient.readContract({
         address: ensIndelibleAddress,
         abi: ensAbi,
-        functionName: 'resolveIndelibleAddress',
+        functionName: 'nodeToBinding',
         args: [node],
     });
 
-    if (existingBinding && existingBinding.toLowerCase() === account.toLowerCase()) {
-        throw new Error('This ENS name is already bound to your address.');
+    if (existingBindingIndex > 0n) {
+        const existingBinding = await publicClient.readContract({
+            address: ensIndelibleAddress,
+            abi: ensAbi,
+            functionName: 'resolveIndelibleAddress',
+            args: [node],
+        });
+        if (existingBinding && existingBinding.toLowerCase() === account.toLowerCase()) {
+            throw new Error('This ENS name is already bound to your address.');
+        }
     }
 
     let setTextTxHash;
