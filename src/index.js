@@ -37,6 +37,9 @@ export {
     decodeCidToIpfsHash,
     attestationToRef,
     verificationResultToRef,
+    collectExclusive,
+    normalise,
+    extractPageData,
     downloadJson,
 } from './utils.js';
 

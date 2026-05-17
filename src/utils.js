@@ -109,6 +109,103 @@ export function verificationResultToRef(verificationResult, chainId) {
     return attestationToRef(attestation, chainId);
 }
 
+// ── DOM extraction helpers (browser-only) ────────────────────────────────────
+
+/**
+ * Collect visible text from `el`, recursively skipping any descendant
+ * that carries `data-indelible-exclude`.
+ *
+ * @param {Element} el
+ * @returns {string}
+ */
+export function collectExclusive(el) {
+    let result = '';
+    for (const node of el.childNodes) {
+        if (node.nodeType === Node.TEXT_NODE) {
+            result += node.textContent;
+        } else if (node.nodeType === Node.ELEMENT_NODE) {
+            if (node.hasAttribute('data-indelible-exclude')) continue;
+            result += collectExclusive(node);
+        }
+    }
+    return result;
+}
+
+/**
+ * Collapse runs of whitespace into a single space and trim.
+ *
+ * @param {string} raw
+ * @returns {string}
+ */
+export function normalise(raw) {
+    return raw.replace(/\s+/g, ' ').trim();
+}
+
+/**
+ * Scan the current document for Indelible markup and return all
+ * extracted data, or null if this page carries no Indelible content.
+ *
+ * @returns {{attestation: object|null, text: string, quotes: Array}|null}
+ */
+export function extractPageData() {
+    const root = document.querySelector('[data-indelible]');
+    if (!root) return null;
+
+    // Parse the attestation metadata JSON (may be an empty object {}).
+    let attestation = null;
+    try {
+        const raw = root.getAttribute('data-indelible').trim();
+        if (raw) attestation = JSON.parse(raw);
+    } catch (_) {
+        // Leave attestation null — page is still Indelible-marked.
+    }
+
+    // Determine inclusion mode and extract attested text.
+    const includes = Array.from(root.querySelectorAll('[data-indelible-include]'));
+
+    let text;
+
+    if (includes.length > 0) {
+        // Inclusive mode: only explicitly marked elements contribute text.
+        const seen = new Set();
+        const parts = [];
+
+        for (const el of includes) {
+            // Skip elements whose ancestor is already collected (nested marks).
+            let dominated = false;
+            for (const ancestor of seen) {
+                if (ancestor.contains(el)) { dominated = true; break; }
+            }
+            if (dominated) continue;
+            seen.add(el);
+            parts.push(el.textContent);
+        }
+
+        text = normalise(parts.join(' '));
+    } else {
+        // Exclusive mode: everything inside root is attested except excluded subtrees.
+        text = normalise(collectExclusive(root));
+    }
+
+    // Collect embedded quote proofs (data-indelible-quote attributes).
+    const quoteElements = Array.from(document.querySelectorAll('[data-indelible-quote]'));
+    const quotes = [];
+
+    for (const el of quoteElements) {
+        try {
+            const proofData = JSON.parse(el.getAttribute('data-indelible-quote'));
+            quotes.push({
+                text: normalise(el.textContent),
+                proofData,
+            });
+        } catch (_) {
+            // Skip elements with malformed proof JSON.
+        }
+    }
+
+    return { attestation, text, quotes };
+}
+
 // Browser-only: trigger download of an object as a JSON file.
 export function downloadJson(data, filename) {
     if (typeof document === 'undefined') {
