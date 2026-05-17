@@ -121,9 +121,9 @@ export function verificationResultToRef(verificationResult, chainId) {
 export function collectExclusive(el) {
     let result = '';
     for (const node of el.childNodes) {
-        if (node.nodeType === Node.TEXT_NODE) {
+        if (node.nodeType === 3 /* TEXT_NODE */) {
             result += node.textContent;
-        } else if (node.nodeType === Node.ELEMENT_NODE) {
+        } else if (node.nodeType === 1 /* ELEMENT_NODE */) {
             if (node.hasAttribute('data-indelible-exclude')) continue;
             result += collectExclusive(node);
         }
@@ -145,10 +145,12 @@ export function normalise(raw) {
  * Scan the current document for Indelible markup and return all
  * extracted data, or null if this page carries no Indelible content.
  *
+ * @param {Document} [doc] - DOM document to query. Defaults to the global `document` (browser).
+ *   In Node.js, pass a `jsdom` document: `new JSDOM(html).window.document`.
  * @returns {{attestation: object|null, text: string, quotes: Array}|null}
  */
-export function extractPageData() {
-    const root = document.querySelector('[data-indelible]');
+export function extractPageData(doc = document) {
+    const root = doc.querySelector('[data-indelible]');
     if (!root) return null;
 
     // Parse the attestation metadata JSON (may be an empty object {}).
@@ -188,7 +190,7 @@ export function extractPageData() {
     }
 
     // Collect embedded quote proofs (data-indelible-quote attributes).
-    const quoteElements = Array.from(document.querySelectorAll('[data-indelible-quote]'));
+    const quoteElements = Array.from(doc.querySelectorAll('[data-indelible-quote]'));
     const quotes = [];
 
     for (const el of quoteElements) {
