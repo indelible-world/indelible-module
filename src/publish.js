@@ -1,9 +1,9 @@
-import { keccak256, encodePacked, toHex, pad, parseAbi, namehash } from 'viem';
+import { keccak256, encodePacked, toHex, pad, parseAbi, namehash, hexToBytes } from 'viem';
 
 import taanqAbi from './abi/taanqAbi.json';
 import ensAbi from './abi/ensAbi.json';
 import { TAANQ_ADDRESS, ENS_INDELIBLE_ADDRESS, ENS_REGISTRY_ADDRESS, MERKLE_SPLIT } from './constants.js';
-import { buildTree, createRawCIDv1, dnsEncodeName, hexHashContent } from './utils.js';
+import { buildTree, createRawCIDv1, dnsEncodeName, hexHashContent, getCIDFromRawDigest } from './utils.js';
 
 const ENS_REGISTRY_ABI = parseAbi(['function owner(bytes32 node) view returns (address)']);
 const ENS_RESOLVER_ABI = parseAbi(['function setText(bytes32 node, string key, string value)']);
@@ -90,15 +90,36 @@ export async function commitAttestation({
         throw new Error('Commit transaction failed');
     }
 
+    const ipfsCid = getCIDFromRawDigest(hexToBytes(ipfsHash));
+
     return {
         txHash,
         pendingCommit: [saltedHash, salt, ipfsHash, qvHash, resolvedParent, resolvedAuthority],
         ipfsHash,
+        ipfsCid,
         qvHash,
         salt,
         saltedHash,
         authority: resolvedAuthority,
         tree,
+    };
+}
+
+/**
+ * Build a ready-to-embed attestation reference from the results of
+ * commitAttestation + revealAttestation.
+ *
+ * @param {{ ipfsCid: string, authority: `0x${string}` }} commitResult
+ * @param {{ attestationIndex: bigint }} revealResult
+ * @param {number} chainId
+ * @returns {{ ipfsCid: string, chainId: number, authority: string, attestationIndex: number }}
+ */
+export function buildAttestationRef(commitResult, revealResult, chainId) {
+    return {
+        ipfsCid: commitResult.ipfsCid,
+        chainId,
+        authority: commitResult.authority,
+        attestationIndex: Number(revealResult.attestationIndex),
     };
 }
 
