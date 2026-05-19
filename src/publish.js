@@ -1,7 +1,7 @@
 import { keccak256, encodePacked, toHex, pad, parseAbi, namehash, hexToBytes } from 'viem';
 
-import taanqAbi from './abi/taanqAbi.json';
-import ensAbi from './abi/ensAbi.json';
+import taanqAbi from './abi/taanqAbi.json' with { type: 'json' };
+import ensAbi from './abi/ensAbi.json' with { type: 'json' };
 import { TAANQ_ADDRESS, ENS_INDELIBLE_ADDRESS, ENS_REGISTRY_ADDRESS, MERKLE_SPLIT } from './constants.js';
 import { buildTree, createRawCIDv1, dnsEncodeName, hexHashContent, getCIDFromRawDigest } from './utils.js';
 
@@ -82,7 +82,6 @@ export async function commitAttestation({
         abi: taanqAbi,
         functionName: 'commit',
         args: [saltedHash],
-        account,
     });
 
     const receipt = await publicClient.waitForTransactionReceipt({ hash: txHash });
@@ -185,7 +184,7 @@ export async function revealAttestation({
         abi: taanqAbi,
         functionName: 'reveal',
         args: pendingCommit,
-        account,
+
     });
 
     const receipt = await publicClient.waitForTransactionReceipt({ hash: txHash });
@@ -219,8 +218,7 @@ export async function revokeAttestation({
         address: taanqAddress,
         abi: taanqAbi,
         functionName: 'revokeAttestation',
-        args: [BigInt(attestationId)],
-        account,
+        args: [BigInt(attestationId)]
     });
 
     const receipt = await publicClient.waitForTransactionReceipt({ hash: txHash });
@@ -244,8 +242,7 @@ export async function delegate({
         address: taanqAddress,
         abi: taanqAbi,
         functionName: 'delegate',
-        args: [delegateAddress],
-        account,
+        args: [delegateAddress]
     });
 
     const receipt = await publicClient.waitForTransactionReceipt({ hash: txHash });
@@ -268,8 +265,7 @@ export async function revokeDelegation({
         address: taanqAddress,
         abi: taanqAbi,
         functionName: 'revokeDelegation',
-        args: [],
-        account,
+        args: []
     });
 
     const receipt = await publicClient.waitForTransactionReceipt({ hash: txHash });
@@ -451,8 +447,7 @@ export async function registerEnsBinding({
             address: resolverAddr,
             abi: ENS_RESOLVER_ABI,
             functionName: 'setText',
-            args: [node, 'indelible-address', account],
-            account,
+            args: [node, 'indelible-address', account]
         });
         const setTextReceipt = await publicClient.waitForTransactionReceipt({ hash: setTextTxHash });
         if (setTextReceipt.status !== 'success') {
@@ -464,8 +459,7 @@ export async function registerEnsBinding({
         address: ensIndelibleAddress,
         abi: ensAbi,
         functionName: 'registerEnsBinding',
-        args: [dnsName],
-        account,
+        args: [dnsName]
     });
 
     const receipt = await publicClient.waitForTransactionReceipt({ hash: txHash });

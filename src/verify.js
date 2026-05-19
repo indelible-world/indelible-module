@@ -1,7 +1,7 @@
 import { StandardMerkleTree } from '@openzeppelin/merkle-tree';
 import { fromHex } from 'viem';
 
-import taanqAbi from './abi/taanqAbi.json';
+import taanqAbi from './abi/taanqAbi.json' with { type: 'json' };
 import { TAANQ_ADDRESS, RESULT_CODE, getPrimaryResultCode, getResultCodeCssClass } from './constants.js';
 import { decodeCidToIpfsHash, getCIDFromRawDigest, prettifyTimestamp } from './utils.js';
 
