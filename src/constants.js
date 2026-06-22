@@ -1,11 +1,12 @@
 // Indelible Protocol contract addresses (deployed on multiple chains at the same address).
-export const TAANQ_ADDRESS = '0x111111a2eb2791b3ee98c5a55972576c54b05b46';
+export const TAANQ_ADDRESS = '0x000000d505a5eaa8c108537Ce40Aa61E4A27D381';
 export const ENS_INDELIBLE_ADDRESS = '0x1111113661d1fbd85b6d131beb199063582c2be7';
 
 // Canonical ENS Registry (mainnet & supported testnets).
 export const ENS_REGISTRY_ADDRESS = '0x00000000000C2E074eC69A0dFb2997BA6C7d2e1e';
 
 // Merkle chunking size used when building per-character/quote proofs.
+// See https://www.desmos.com/calculator/htfwridftb for calculations that led to the number 46 being chosen as the optimal chunk size
 export const MERKLE_SPLIT = 46;
 
 // Result codes returned by verifyCid().
