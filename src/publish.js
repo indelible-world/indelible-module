@@ -229,6 +229,42 @@ export async function revokeAttestation({
 }
 
 /**
+ * Set the child IPFS hash on an existing attestation, signifying that a new version of the
+ * attested content exists. Only callable by the attestation's authority or an active delegate.
+ *
+ * @param {{
+ *   walletClient: import('viem').WalletClient,
+ *   publicClient: import('viem').PublicClient,
+ *   attestationId: number | bigint,
+ *   childIpfsHash: `0x${string}`,
+ *   account: `0x${string}`,
+ *   taanqAddress?: `0x${string}`,
+ * }} args
+ * @returns {Promise<{ txHash: `0x${string}` }>}
+ */
+export async function setChildIpfsHash({
+    walletClient,
+    publicClient,
+    attestationId,
+    childIpfsHash,
+    account,
+    taanqAddress = TAANQ_ADDRESS,
+}) {
+    const txHash = await walletClient.writeContract({
+        address: taanqAddress,
+        abi: taanqAbi,
+        functionName: 'setChildIpfsHash',
+        args: [BigInt(attestationId), childIpfsHash],
+    });
+
+    const receipt = await publicClient.waitForTransactionReceipt({ hash: txHash });
+    if (receipt.status !== 'success') {
+        throw new Error('setChildIpfsHash transaction failed');
+    }
+    return { txHash };
+}
+
+/**
  * Delegate this authority's attestation rights to another address.
  */
 export async function delegate({

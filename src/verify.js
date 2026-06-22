@@ -9,7 +9,7 @@ import { decodeCidToIpfsHash, getCIDFromRawDigest, prettifyTimestamp } from './u
  * On-chain attestation record.
  */
 export class Attestation {
-    constructor(cid, qvHash, parentIpfsHash, authority, timestamp, revokedAt, index) {
+    constructor(cid, qvHash, parentIpfsHash, authority, timestamp, revokedAt, index, childIpfsHash) {
         this.cid = cid;
         this.qvHash = qvHash;
         this.parentIpfsHash = parentIpfsHash;
@@ -17,6 +17,7 @@ export class Attestation {
         this.timestamp = timestamp;
         this.revokedAt = revokedAt;
         this.index = index;
+        this.childIpfsHash = childIpfsHash;
     }
 }
 
@@ -101,6 +102,7 @@ function attestationFromRpc(rpcResponse, index) {
         rpcResponse[4],
         rpcResponse[5],
         index,
+        rpcResponse[6],
     );
 }
 

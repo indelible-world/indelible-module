@@ -89,6 +89,7 @@ export {
     commitAttestation,
     revealAttestation,
     revokeAttestation,
+    setChildIpfsHash,
     delegate,
     revokeDelegation,
     proveQuote,
