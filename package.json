@@ -31,7 +31,7 @@
   ],
   "license": "MIT",
   "peerDependencies": {
-    "viem": "^2.0.0"
+    "viem": "^2.35.0"
   },
   "dependencies": {
     "@openzeppelin/merkle-tree": "^1.0.8",
