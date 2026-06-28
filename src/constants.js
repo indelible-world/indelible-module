@@ -1,6 +1,6 @@
 // Indelible Protocol contract addresses (deployed on multiple chains at the same address).
 export const TAANQ_ADDRESS = '0x000000d505a5eaa8c108537Ce40Aa61E4A27D381';
-export const ENS_INDELIBLE_ADDRESS = '0x1111113661d1fbd85b6d131beb199063582c2be7';
+export const ENS_INDELIBLE_ADDRESS = '0x0000006c07ba8745BEA0becAAF5f5fc143eC5b52';
 
 // Canonical ENS Registry (mainnet & supported testnets).
 export const ENS_REGISTRY_ADDRESS = '0x00000000000C2E074eC69A0dFb2997BA6C7d2e1e';

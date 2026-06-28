@@ -22,10 +22,10 @@
     },
     {
         "inputs": [],
-        "name": "REGISTRY",
+        "name": "UNIVERSAL_RESOLVER",
         "outputs": [
             {
-                "internalType": "contract ENS",
+                "internalType": "contract IUniversalResolver",
                 "name": "",
                 "type": "address"
             }
@@ -104,6 +104,11 @@
     },
     {
         "inputs": [
+            {
+                "internalType": "bytes",
+                "name": "dnsName",
+                "type": "bytes"
+            },
             {
                 "internalType": "bytes32",
                 "name": "node",
