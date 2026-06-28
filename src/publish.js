@@ -453,7 +453,7 @@ export async function registerEnsBinding({
             address: ensIndelibleAddress,
             abi: ensAbi,
             functionName: 'resolveIndelibleAddress',
-            args: [node],
+            args: [dnsName, node],
         });
         if (existingBinding && existingBinding.toLowerCase() === account.toLowerCase()) {
             throw new Error('This ENS name is already bound to your address.');
