@@ -432,18 +432,23 @@ export async function registerEnsBinding({
     ensRegistryAddress = ENS_REGISTRY_ADDRESS,
 }) {
     const normalized = ensName.trim().toLowerCase();
-    if (!normalized || !normalized.includes('.')) {
+    // ENSv2: treat any dot-separated string as a potential name (.eth, DNS
+    // names, subdomains, …) rather than restricting to a fixed TLD.
+    if (!normalized || !normalized.includes('.') || normalized.length < 3) {
         throw new Error('Invalid ENS name (e.g. yourname.eth).');
     }
 
     const dnsName = dnsEncodeName(normalized);
     const node = namehash(normalized);
 
+    // 1. Check the name exists / is resolvable. With ENSv2 this goes through
+    //    the Universal Resolver (handled internally by viem >= 2.35).
     const resolverAddr = await publicClient.getEnsResolver({ name: normalized });
     if (!resolverAddr) {
         throw new Error('No resolver set for this ENS name. Please configure a resolver first.');
     }
 
+    // 2. Check whether the name is already bound to this account.
     const existingBindingIndex = await publicClient.readContract({
         address: ensIndelibleAddress,
         abi: ensAbi,
@@ -456,18 +461,24 @@ export async function registerEnsBinding({
             address: ensIndelibleAddress,
             abi: ensAbi,
             functionName: 'resolveIndelibleAddress',
-            args: [node],
+            args: [dnsName, node],
         });
         if (existingBinding && existingBinding.toLowerCase() === account.toLowerCase()) {
             throw new Error('This ENS name is already bound to your address.');
         }
     }
 
+    // 3. Check whether the `indelible-address` text record already points at
+    //    this account. If it does, no setText is required.
     let setTextTxHash;
     const indelibleAddr = await publicClient.getEnsText({ name: normalized, key: 'indelible-address' });
-    if (!indelibleAddr) {
+    const recordMatches = indelibleAddr && indelibleAddr.toLowerCase() === account.toLowerCase();
+
+    // 4. If the record is missing or points elsewhere, ensure the caller has
+    //    the right to set records (owns the name) and set it.
+    if (!recordMatches) {
         if (!setIndelibleAddressIfMissing) {
-            throw new Error('The "indelible-address" text record is not set on this ENS name.');
+            throw new Error('The "indelible-address" text record is not set to your address on this ENS name.');
         }
         const owner = await publicClient.readContract({
             address: ensRegistryAddress,
@@ -475,7 +486,7 @@ export async function registerEnsBinding({
             functionName: 'owner',
             args: [node],
         });
-        if (!owner || owner.toLowerCase() !== account.toLowerCase()) {
+        if (owner || owner.toLowerCase() !== account.toLowerCase()) {
             throw new Error('You do not own this ENS name. Only the owner can set the indelible-address record.');
         }
 
@@ -491,6 +502,7 @@ export async function registerEnsBinding({
         }
     }
 
+    // Finally register the binding on the Indelible ENS contract.
     const txHash = await walletClient.writeContract({
         address: ensIndelibleAddress,
         abi: ensAbi,

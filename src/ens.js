@@ -174,23 +174,28 @@ export async function getNodeToBinding(client, node, opts = {}) {
 }
 
 /**
- * Resolve the Ethereum address that an ENS node's `indelible-address` text
+ * Resolve the Ethereum address that an ENS name's `indelible-address` text
  * record points to, as returned by the ENS Indelible contract.
+ *
+ * With ENSv2 / the Universal Resolver, the contract resolves the record from
+ * the DNS-wire-format name, so both the encoded `dnsName` and the `node`
+ * namehash must be supplied.
  *
  * Returns `null` if unresolvable or the zero address.
  *
  * @param {import('viem').PublicClient} client
+ * @param {`0x${string}`|Uint8Array} dnsName  DNS-wire-format encoded name.
  * @param {`0x${string}`} node  ENS namehash.
  * @param {{ ensIndelibleAddress?: `0x${string}` }} [opts]
  * @returns {Promise<`0x${string}`|null>}
  */
-export async function resolveIndelibleAddress(client, node, opts = {}) {
+export async function resolveIndelibleAddress(client, dnsName, node, opts = {}) {
     try {
         const result = await client.readContract({
             address: opts.ensIndelibleAddress ?? ENS_INDELIBLE_ADDRESS,
             abi: ensAbi,
             functionName: 'resolveIndelibleAddress',
-            args: [node],
+            args: [dnsName, node],
         });
         if (!result || result === '0x0000000000000000000000000000000000000000') return null;
         return result;
