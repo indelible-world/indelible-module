@@ -186,7 +186,7 @@ export async function getNodeToBinding(client, node, opts = {}) {
  * @param {import('viem').PublicClient} client
  * @param {`0x${string}`|Uint8Array} dnsName  DNS-wire-format encoded name.
  * @param {`0x${string}`} node  ENS namehash.
- * @param {{ ensIndelibleAddress?: `0x${string}` }} [opts]
+ * @param {{ ensIndelibleAddress?: `0x${string}`, dnsName?: `0x${string}`|Uint8Array }} [opts]
  * @returns {Promise<`0x${string}`|null>}
  */
 export async function resolveIndelibleAddress(client, dnsName, node, opts = {}) {

@@ -92,7 +92,7 @@ downloadJson(proofJson, 'quote-proof.json'); // browser only
 ## API surface
 
 ### Constants — `indelible/constants`
-- `TAANQ_ADDRESS`, `ENS_INDELIBLE_ADDRESS`, `ENS_REGISTRY_ADDRESS`
+- `TAANQ_ADDRESS`, `ENS_INDELIBLE_ADDRESS`
 - `MERKLE_SPLIT` — chunk size used for Merkle quote proofs (46 chars)
 - `RESULT_CODE` — `{ NOT_FOUND, VERIFIED, UNVERIFIED, REVOKED, WARNING }`
 

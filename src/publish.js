@@ -2,10 +2,9 @@ import { keccak256, encodePacked, toHex, pad, parseAbi, namehash, hexToBytes } f
 
 import taanqAbi from './abi/taanqAbi.json' with { type: 'json' };
 import ensAbi from './abi/ensAbi.json' with { type: 'json' };
-import { TAANQ_ADDRESS, ENS_INDELIBLE_ADDRESS, ENS_REGISTRY_ADDRESS, MERKLE_SPLIT } from './constants.js';
+import { TAANQ_ADDRESS, ENS_INDELIBLE_ADDRESS, MERKLE_SPLIT } from './constants.js';
 import { buildTree, createRawCIDv1, dnsEncodeName, hexHashContent, getCIDFromRawDigest } from './utils.js';
 
-const ENS_REGISTRY_ABI = parseAbi(['function owner(bytes32 node) view returns (address)']);
 const ENS_RESOLVER_ABI = parseAbi(['function setText(bytes32 node, string key, string value)']);
 
 /**
@@ -418,7 +417,6 @@ export async function proveQuote({
  *   account: `0x${string}`,
  *   setIndelibleAddressIfMissing?: boolean,
  *   ensIndelibleAddress?: `0x${string}`,
- *   ensRegistryAddress?: `0x${string}`,
  * }} args
  * @returns {Promise<{ txHash: `0x${string}`, setTextTxHash?: `0x${string}` }>}
  */
@@ -429,7 +427,6 @@ export async function registerEnsBinding({
     account,
     setIndelibleAddressIfMissing = true,
     ensIndelibleAddress = ENS_INDELIBLE_ADDRESS,
-    ensRegistryAddress = ENS_REGISTRY_ADDRESS,
 }) {
     const normalized = ensName.trim().toLowerCase();
     // ENSv2: treat any dot-separated string as a potential name (.eth, DNS

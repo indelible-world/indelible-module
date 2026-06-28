@@ -2,9 +2,6 @@
 export const TAANQ_ADDRESS = '0x000000d505a5eaa8c108537Ce40Aa61E4A27D381';
 export const ENS_INDELIBLE_ADDRESS = '0x0000006c07ba8745BEA0becAAF5f5fc143eC5b52';
 
-// Canonical ENS Registry (mainnet & supported testnets).
-export const ENS_REGISTRY_ADDRESS = '0x00000000000C2E074eC69A0dFb2997BA6C7d2e1e';
-
 // Merkle chunking size used when building per-character/quote proofs.
 // See https://www.desmos.com/calculator/htfwridftb for calculations that led to the number 46 being chosen as the optimal chunk size
 export const MERKLE_SPLIT = 46;
