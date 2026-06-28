@@ -2,10 +2,9 @@ import { keccak256, encodePacked, toHex, pad, parseAbi, namehash, hexToBytes } f
 
 import taanqAbi from './abi/taanqAbi.json' with { type: 'json' };
 import ensAbi from './abi/ensAbi.json' with { type: 'json' };
-import { TAANQ_ADDRESS, ENS_INDELIBLE_ADDRESS, ENS_REGISTRY_ADDRESS, MERKLE_SPLIT } from './constants.js';
+import { TAANQ_ADDRESS, ENS_INDELIBLE_ADDRESS, MERKLE_SPLIT } from './constants.js';
 import { buildTree, createRawCIDv1, dnsEncodeName, hexHashContent, getCIDFromRawDigest } from './utils.js';
 
-const ENS_REGISTRY_ABI = parseAbi(['function owner(bytes32 node) view returns (address)']);
 const ENS_RESOLVER_ABI = parseAbi(['function setText(bytes32 node, string key, string value)']);
 
 /**
@@ -418,7 +417,6 @@ export async function proveQuote({
  *   account: `0x${string}`,
  *   setIndelibleAddressIfMissing?: boolean,
  *   ensIndelibleAddress?: `0x${string}`,
- *   ensRegistryAddress?: `0x${string}`,
  * }} args
  * @returns {Promise<{ txHash: `0x${string}`, setTextTxHash?: `0x${string}` }>}
  */
@@ -429,7 +427,6 @@ export async function registerEnsBinding({
     account,
     setIndelibleAddressIfMissing = true,
     ensIndelibleAddress = ENS_INDELIBLE_ADDRESS,
-    ensRegistryAddress = ENS_REGISTRY_ADDRESS,
 }) {
     const normalized = ensName.trim().toLowerCase();
     if (!normalized || !normalized.includes('.')) {
@@ -469,16 +466,6 @@ export async function registerEnsBinding({
         if (!setIndelibleAddressIfMissing) {
             throw new Error('The "indelible-address" text record is not set on this ENS name.');
         }
-        const owner = await publicClient.readContract({
-            address: ensRegistryAddress,
-            abi: ENS_REGISTRY_ABI,
-            functionName: 'owner',
-            args: [node],
-        });
-        if (!owner || owner.toLowerCase() !== account.toLowerCase()) {
-            throw new Error('You do not own this ENS name. Only the owner can set the indelible-address record.');
-        }
-
         setTextTxHash = await walletClient.writeContract({
             address: resolverAddr,
             abi: ENS_RESOLVER_ABI,
