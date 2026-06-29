@@ -2,10 +2,9 @@ import { keccak256, encodePacked, toHex, pad, parseAbi, namehash, hexToBytes } f
 
 import taanqAbi from './abi/taanqAbi.json' with { type: 'json' };
 import ensAbi from './abi/ensAbi.json' with { type: 'json' };
-import { TAANQ_ADDRESS, ENS_INDELIBLE_ADDRESS, ENS_REGISTRY_ADDRESS, MERKLE_SPLIT } from './constants.js';
+import { TAANQ_ADDRESS, ENS_INDELIBLE_ADDRESS, MERKLE_SPLIT } from './constants.js';
 import { buildTree, createRawCIDv1, dnsEncodeName, hexHashContent, getCIDFromRawDigest } from './utils.js';
 
-const ENS_REGISTRY_ABI = parseAbi(['function owner(bytes32 node) view returns (address)']);
 const ENS_RESOLVER_ABI = parseAbi(['function setText(bytes32 node, string key, string value)']);
 
 /**
@@ -418,7 +417,6 @@ export async function proveQuote({
  *   account: `0x${string}`,
  *   setIndelibleAddressIfMissing?: boolean,
  *   ensIndelibleAddress?: `0x${string}`,
- *   ensRegistryAddress?: `0x${string}`,
  * }} args
  * @returns {Promise<{ txHash: `0x${string}`, setTextTxHash?: `0x${string}` }>}
  */
@@ -429,7 +427,6 @@ export async function registerEnsBinding({
     account,
     setIndelibleAddressIfMissing = true,
     ensIndelibleAddress = ENS_INDELIBLE_ADDRESS,
-    ensRegistryAddress = ENS_REGISTRY_ADDRESS,
 }) {
     const normalized = ensName.trim().toLowerCase();
     // ENSv2: treat any dot-separated string as a potential name (.eth, DNS
@@ -444,8 +441,8 @@ export async function registerEnsBinding({
     // 1. Check the name exists / is resolvable. With ENSv2 this goes through
     //    the Universal Resolver (handled internally by viem >= 2.35).
     const resolverAddr = await publicClient.getEnsResolver({ name: normalized });
-    if (!resolverAddr) {
-        throw new Error('No resolver set for this ENS name. Please configure a resolver first.');
+    if (!resolverAddr || resolverAddr === '0x0000000000000000000000000000000000000000') {
+        throw new Error('No resolver set for this ENS name. Please configure a resolver first. (this probably means that the domain has not been registered');
     }
 
     // 2. Check whether the name is already bound to this account.
@@ -474,20 +471,26 @@ export async function registerEnsBinding({
     const indelibleAddr = await publicClient.getEnsText({ name: normalized, key: 'indelible-address' });
     const recordMatches = indelibleAddr && indelibleAddr.toLowerCase() === account.toLowerCase();
 
-    // 4. If the record is missing or points elsewhere, ensure the caller has
-    //    the right to set records (owns the name) and set it.
+    // 4. If the record is missing or points elsewhere, verify the caller has
+    //    permission to set records by simulating the setText call.
+    //    This correctly handles direct owners, NameWrapper-wrapped names, and
+    //    ENSv2 L2 names — all cases where registry owner() returns the wrong
+    //    address or 0x0.
     if (!recordMatches) {
         if (!setIndelibleAddressIfMissing) {
             throw new Error('The "indelible-address" text record is not set to your address on this ENS name.');
         }
-        const owner = await publicClient.readContract({
-            address: ensRegistryAddress,
-            abi: ENS_REGISTRY_ABI,
-            functionName: 'owner',
-            args: [node],
-        });
-        if (owner || owner.toLowerCase() !== account.toLowerCase()) {
-            throw new Error('You do not own this ENS name. Only the owner can set the indelible-address record.');
+
+        try {
+            await publicClient.simulateContract({
+                address: resolverAddr,
+                abi: ENS_RESOLVER_ABI,
+                functionName: 'setText',
+                args: [node, 'indelible-address', account],
+                account,
+            });
+        } catch {
+            throw new Error('You do not have permission to set records on this ENS name.');
         }
 
         setTextTxHash = await walletClient.writeContract({
