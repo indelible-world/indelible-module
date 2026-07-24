@@ -5,21 +5,48 @@
   "type": "module",
   "main": "./src/index.js",
   "module": "./src/index.js",
+  "types": "./types/index.d.ts",
   "exports": {
-    ".": "./src/index.js",
-    "./utils": "./src/utils.js",
-    "./verify": "./src/verify.js",
-    "./publish": "./src/publish.js",
-    "./constants": "./src/constants.js",
-    "./chains": "./src/chains.js",
-    "./ens": "./src/ens.js",
+    ".": {
+      "types": "./types/index.d.ts",
+      "default": "./src/index.js"
+    },
+    "./utils": {
+      "types": "./types/utils.d.ts",
+      "default": "./src/utils.js"
+    },
+    "./verify": {
+      "types": "./types/verify.d.ts",
+      "default": "./src/verify.js"
+    },
+    "./publish": {
+      "types": "./types/publish.d.ts",
+      "default": "./src/publish.js"
+    },
+    "./constants": {
+      "types": "./types/constants.d.ts",
+      "default": "./src/constants.js"
+    },
+    "./chains": {
+      "types": "./types/chains.d.ts",
+      "default": "./src/chains.js"
+    },
+    "./ens": {
+      "types": "./types/ens.d.ts",
+      "default": "./src/ens.js"
+    },
     "./abi/taanq": "./src/abi/taanqAbi.json",
     "./abi/ens": "./src/abi/ensAbi.json"
   },
   "files": [
     "src",
+    "types",
     "README.md"
   ],
+  "scripts": {
+    "build:types": "tsc",
+    "prepublishOnly": "npm run build:types"
+  },
   "keywords": [
     "indelible",
     "attestation",
@@ -43,5 +70,8 @@
   },
   "publishConfig": {
     "access": "public"
+  },
+  "devDependencies": {
+    "typescript": "^7.0.2"
   }
 }
