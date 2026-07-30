@@ -57,6 +57,40 @@ export function buildTree(text) {
     return StandardMerkleTree.of(values, ['string', 'string']);
 }
 
+// ── Quote gap handling (ellipses / bracketed insertions) ────────────────────
+
+/**
+ * Matches a "gap" marker inside a quote: an ASCII ellipsis (three or more
+ * dots), a Unicode ellipsis "…", or a bracketed editorial insertion/omission
+ * such as "[sic]" or "[…]".
+ */
+export const QUOTE_GAP_PATTERN = /\.{3,}|…|\[[^\]]*\]/;
+
+/**
+ * Whether a quote contains any gap markers (ellipses or bracketed text).
+ *
+ * @param {string} quote
+ * @returns {boolean}
+ */
+export function hasQuoteGaps(quote) {
+    return QUOTE_GAP_PATTERN.test(quote);
+}
+
+/**
+ * Split a quote on its gap markers (ellipses / bracketed insertions) into the
+ * literal segments that must appear in the source text. Segments are trimmed
+ * and empty segments are dropped.
+ *
+ * @param {string} quote
+ * @returns {string[]}
+ */
+export function splitQuoteSegments(quote) {
+    return quote
+        .split(new RegExp(QUOTE_GAP_PATTERN.source, 'g'))
+        .map((s) => s.trim())
+        .filter((s) => s.length > 0);
+}
+
 export function dnsEncodeName(name) {
     const labels = name.replace(/\.$/, '').split('.');
     const parts = [];

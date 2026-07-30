@@ -3,7 +3,7 @@ import { fromHex } from 'viem';
 
 import taanqAbi from './abi/taanqAbi.json' with { type: 'json' };
 import { TAANQ_ADDRESS, RESULT_CODE, getPrimaryResultCode, getResultCodeCssClass } from './constants.js';
-import { decodeCidToIpfsHash, getCIDFromRawDigest, prettifyTimestamp } from './utils.js';
+import { decodeCidToIpfsHash, getCIDFromRawDigest, prettifyTimestamp, hasQuoteGaps, splitQuoteSegments } from './utils.js';
 
 /**
  * On-chain attestation record.
@@ -230,10 +230,17 @@ export async function verifyCid(publicClient, cid, authority = null, opts = {}) 
  * attestation. Returns the verification result, the reconstructed quote text, and a flag
  * indicating whether every Merkle proof was valid.
  *
+ * Optionally pass the displayed quote via `opts.quote` to also check that it is covered
+ * by the proven text. `opts.mode` controls how that check is performed:
+ * - `'hard'` (default): the quote must appear verbatim in the proven text.
+ * - `'soft'`: the quote may contain ellipses (`...`, `…`) or bracketed insertions
+ *   (`[sic]`); each literal segment must appear in the proven text, in order.
+ * When `opts.quote` is provided the result includes a `quoteMatches` boolean.
+ *
  * @param {import('viem').PublicClient} publicClient
  * @param {{ ipfsCid: string, authority?: `0x${string}`, attestationIndex?: number, proof: { value: [string, string], proof: string[] }[], chainId?: number }} proofData
- * @param {{ taanqAddress?: `0x${string}` }} [opts]
- * @returns {Promise<{ verification: VerificationResult, quoteText: string, allProofsValid: boolean }>}
+ * @param {{ taanqAddress?: `0x${string}`, quote?: string, mode?: 'hard' | 'soft' }} [opts]
+ * @returns {Promise<{ verification: VerificationResult, quoteText: string, allProofsValid: boolean, quoteMatches?: boolean }>}
  */
 export async function verifyQuoteProof(publicClient, proofData, opts = {}) {
     if (!proofData || !proofData.ipfsCid || !Array.isArray(proofData.proof)) {
@@ -267,6 +274,11 @@ export async function verifyQuoteProof(publicClient, proofData, opts = {}) {
             const valid = StandardMerkleTree.verify(merkleRoot, ['string', 'string'], item.value, item.proof);
             if (!valid) {
                 allProofsValid = false;
+    if (opts.quote != null) {
+        const quoteMatches = quoteMatchesProvenText(opts.quote, quoteText, { mode: opts.mode });
+        return { verification, quoteText, allProofsValid, quoteMatches };
+    }
+
                 break;
             }
         }
@@ -275,4 +287,39 @@ export async function verifyQuoteProof(publicClient, proofData, opts = {}) {
     const quoteText = sortedProofs.map((item) => item.value[1]).join('');
 
     return { verification, quoteText, allProofsValid };
+}
+
+/**
+ * Check whether a displayed quote is covered by the proven text reconstructed from a
+ * quote proof (the `quoteText` returned by `verifyQuoteProof`).
+ *
+ * - `'hard'` (default): the quote must appear verbatim as a contiguous substring of the
+ *   proven text. This is the original behaviour — no breaking changes.
+ * - `'soft'`: the quote may contain gap markers — ellipses (`...`, `…`) or bracketed
+ *   editorial insertions (`[sic]`). Each literal segment on either side of a gap must
+ *   appear in the proven text, in the same order as in the quote. Text inside brackets
+ *   is ignored entirely.
+ *
+ * @param {string} quote The quote as displayed (may contain `...`/`…`/`[...]` in soft mode).
+ * @param {string} provenText The Merkle-proven text (`quoteText` from `verifyQuoteProof`).
+ * @param {{ mode?: 'hard' | 'soft' }} [opts]
+ * @returns {boolean}
+ */
+export function quoteMatchesProvenText(quote, provenText, opts = {}) {
+    const mode = opts.mode ?? 'hard';
+    if (typeof quote !== 'string' || typeof provenText !== 'string') return false;
+
+    if (provenText.includes(quote)) return true;
+    if (mode !== 'soft' || !hasQuoteGaps(quote)) return false;
+
+    const segments = splitQuoteSegments(quote);
+    if (segments.length === 0) return false;
+
+    let searchFrom = 0;
+    for (const segment of segments) {
+        const index = provenText.indexOf(segment, searchFrom);
+        if (index === -1) return false;
+        searchFrom = index + segment.length;
+    }
+    return true;
 }

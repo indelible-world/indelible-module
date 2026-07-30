@@ -43,6 +43,15 @@ const { verification, quoteText, allProofsValid } = await verifyQuoteProof(
     publicClient,
     proofData,
 );
+
+// Optionally check a displayed quote against the proven text. Defaults to
+// 'hard' (verbatim substring). Use 'soft' to allow ellipses ("...", "…") and
+// bracketed insertions ("[sic]") inside the quote — each literal segment must
+// then appear in the proven text, in order.
+const { quoteMatches } = await verifyQuoteProof(publicClient, proofData, {
+    quote: displayedQuote,
+    mode: 'soft',
+});
 ```
 
 ### Commit + reveal an attestation
@@ -82,7 +91,8 @@ import { proveQuote, downloadJson } from 'indelible';
 
 const { proofJson, onChain } = await proveQuote({
     articleText,
-    quote,
+    quote,               // may contain "...", "…", or "[insertions]" — each
+                         // segment around a gap is proven in order
     authority,
     publicClient,        // optional — embeds chainId + attestationIndex when found
 });
@@ -108,7 +118,8 @@ downloadJson(proofJson, 'quote-proof.json'); // browser only
 
 ### Verification — `indelible/verify`
 - `verifyCid(publicClient, cid, authority?)` → `VerificationResult`
-- `verifyQuoteProof(publicClient, proofData)` → `{ verification, quoteText, allProofsValid }`
+- `verifyQuoteProof(publicClient, proofData, { quote?, mode? })` → `{ verification, quoteText, allProofsValid, quoteMatches? }`
+- `quoteMatchesProvenText(quote, provenText, { mode? })` — `'hard'` (default, verbatim) or `'soft'` (allows `...`/`…`/`[…]` gaps)
 - `getAttestationByIndex(publicClient, index)`
 - `cidToAttestationIndices`, `cidAndAddressToAttestationIndices`
 - Classes: `Attestation`, `VerificationResult`

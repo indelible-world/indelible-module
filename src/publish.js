@@ -3,7 +3,7 @@ import { keccak256, encodePacked, toHex, pad, parseAbi, namehash, hexToBytes } f
 import taanqAbi from './abi/taanqAbi.json' with { type: 'json' };
 import ensAbi from './abi/ensAbi.json' with { type: 'json' };
 import { TAANQ_ADDRESS, ENS_INDELIBLE_ADDRESS, MERKLE_SPLIT } from './constants.js';
-import { buildTree, createRawCIDv1, dnsEncodeName, hexHashContent, getCIDFromRawDigest } from './utils.js';
+import { buildTree, createRawCIDv1, dnsEncodeName, hexHashContent, getCIDFromRawDigest, hasQuoteGaps, splitQuoteSegments } from './utils.js';
 
 const ENS_RESOLVER_ABI = parseAbi(['function setText(bytes32 node, string key, string value)']);
 
@@ -314,6 +314,11 @@ export async function revokeDelegation({
  * Build a quote-proof JSON document that proves a contiguous sub-string of `articleText`
  * is part of an attested article, without revealing the rest of the article.
  *
+ * The quote may contain gap markers — ellipses (`...`, `…`) or bracketed editorial
+ * insertions (`[sic]`) — in which case each literal segment on either side of a gap is
+ * located in order within `articleText` and proofs are produced for the chunks covering
+ * every segment. The resulting proof JSON has the exact same shape as a contiguous one.
+ *
  * If `publicClient` is supplied, the function will additionally try to look up the
  * on-chain attestation index for the given (article, authority) pair and embed it
  * (along with `chainId`) in the resulting JSON for efficient verification.
@@ -349,20 +354,45 @@ export async function proveQuote({
     if (!quote) throw new Error('quote is required.');
     if (!authority) throw new Error('authority is required.');
 
+    // Determine the [start, end) ranges of article text that must be proven.
+    // A quote is normally a single contiguous substring, but it may contain
+    // gap markers — ellipses ("...", "…") or bracketed insertions ("[sic]") —
+    // in which case each literal segment is located in order instead.
+    const matchRanges = [];
     const quoteStart = articleText.indexOf(quote);
-    if (quoteStart === -1) {
+    if (quoteStart !== -1) {
+        matchRanges.push([quoteStart, quoteStart + quote.length]);
+    } else if (hasQuoteGaps(quote)) {
+        const segments = splitQuoteSegments(quote);
+        if (segments.length === 0) {
+            throw new Error('Quote contains no text outside ellipses/brackets.');
+        }
+        let searchFrom = 0;
+        for (const segment of segments) {
+            const start = articleText.indexOf(segment, searchFrom);
+            if (start === -1) {
+                throw new Error(`Quote segment not found in the article text (or out of order): "${segment}"`);
+            }
+            matchRanges.push([start, start + segment.length]);
+            searchFrom = start + segment.length;
+        }
+    } else {
         throw new Error('Quote not found in the article text.');
     }
-    const quoteEnd = quoteStart + quote.length;
 
-    const firstChunk = Math.floor(quoteStart / MERKLE_SPLIT);
-    const lastChunk = Math.floor((quoteEnd - 1) / MERKLE_SPLIT);
+    const chunkIndexes = new Set();
+    for (const [start, end] of matchRanges) {
+        const firstChunk = Math.floor(start / MERKLE_SPLIT);
+        const lastChunk = Math.floor((end - 1) / MERKLE_SPLIT);
+        for (let c = firstChunk; c <= lastChunk; c++) {
+            chunkIndexes.add(c);
+        }
+    }
 
     const tree = buildTree(articleText);
     const matchingProofs = [];
     for (const [i, v] of tree.entries()) {
-        const chunkIndex = parseInt(v[0], 10);
-        if (chunkIndex >= firstChunk && chunkIndex <= lastChunk) {
+        if (chunkIndexes.has(parseInt(v[0], 10))) {
             matchingProofs.push({ value: v, proof: tree.getProof(i) });
         }
     }
