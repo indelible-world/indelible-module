@@ -318,6 +318,8 @@ export async function revokeDelegation({
  * insertions (`[sic]`) — in which case each literal segment on either side of a gap is
  * located in order within `articleText` and proofs are produced for the chunks covering
  * every segment. The resulting proof JSON has the exact same shape as a contiguous one.
+ * Pass `disableSegmenting: true` to skip this behavior (e.g. when the quote's `...` or
+ * `[...]` is literal text, not a gap marker) — a non-verbatim quote will then always throw.
  *
  * If `publicClient` is supplied, the function will additionally try to look up the
  * on-chain attestation index for the given (article, authority) pair and embed it
@@ -330,6 +332,7 @@ export async function revokeDelegation({
  *   publicClient?: import('viem').PublicClient,
  *   chainId?: number,
  *   taanqAddress?: `0x${string}`,
+ *   disableSegmenting?: boolean,
  * }} args
  * @returns {Promise<{
  *   proofJson: {
@@ -349,6 +352,7 @@ export async function proveQuote({
     publicClient,
     chainId,
     taanqAddress = TAANQ_ADDRESS,
+    disableSegmenting = false
 }) {
     if (!articleText) throw new Error('articleText is required.');
     if (!quote) throw new Error('quote is required.');
@@ -362,7 +366,7 @@ export async function proveQuote({
     const quoteStart = articleText.indexOf(quote);
     if (quoteStart !== -1) {
         matchRanges.push([quoteStart, quoteStart + quote.length]);
-    } else if (hasQuoteGaps(quote)) {
+    } else if (hasQuoteGaps(quote) && !disableSegmenting) {
         const segments = splitQuoteSegments(quote);
         if (segments.length === 0) {
             throw new Error('Quote contains no text outside ellipses/brackets.');

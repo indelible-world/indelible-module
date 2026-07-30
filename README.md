@@ -95,6 +95,8 @@ const { proofJson, onChain } = await proveQuote({
                          // segment around a gap is proven in order
     authority,
     publicClient,        // optional — embeds chainId + attestationIndex when found
+    disableSegmenting,   // optional — set true if "..."/"[...]" in the quote is
+                         // literal text, not a gap marker (default false)
 });
 downloadJson(proofJson, 'quote-proof.json'); // browser only
 ```
@@ -130,7 +132,7 @@ downloadJson(proofJson, 'quote-proof.json'); // browser only
 - `revokeAttestation({ walletClient, publicClient, attestationId, account })`
 - `delegate({ walletClient, publicClient, delegateAddress, account })`
 - `revokeDelegation({ walletClient, publicClient, account })`
-- `proveQuote({ articleText, quote, authority, publicClient?, chainId? })`
+- `proveQuote({ articleText, quote, authority, publicClient?, chainId?, disableSegmenting? })`
 - `registerEnsBinding({ walletClient, publicClient, ensName, account })`
 - `getExistingAttestationIndex({ publicClient, ipfsHash, authority })`
 - `getDelegation({ publicClient, authority })`
