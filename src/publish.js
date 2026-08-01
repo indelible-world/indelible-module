@@ -74,7 +74,7 @@ export async function commitAttestation({
     const salt = generateSalt();
     const resolvedAuthority = authority || account;
     const resolvedParent = parentIpfsHash || `0x${'00'.repeat(32)}`;
-    const saltedHash = buildSaltedHash(ipfsHash, resolvedAuthority, salt);
+    const saltedHash = buildSaltedHash(ipfsHash, account, salt);
 
     const txHash = await walletClient.writeContract({
         address: taanqAddress,
