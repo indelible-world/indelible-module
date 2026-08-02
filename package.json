@@ -1,6 +1,6 @@
 {
   "name": "indelible",
-  "version": "0.3.6",
+  "version": "0.3.7",
   "description": "Client library for the Indelible Standard — attest, verify, delegate, and prove quotes from on-chain content attestations.",
   "type": "module",
   "main": "./src/index.js",

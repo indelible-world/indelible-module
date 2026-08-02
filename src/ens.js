@@ -9,7 +9,7 @@
 import { namehash } from 'viem';
 import { normalize } from 'viem/ens';
 
-import ensAbi from './abi/ensAbi.json';
+import ensAbi from './abi/ensAbi.json' with { type: 'json' };
 import { ENS_INDELIBLE_ADDRESS } from './constants.js';
 
 // ---------------------------------------------------------------------------
