@@ -274,17 +274,17 @@ export async function verifyQuoteProof(publicClient, proofData, opts = {}) {
             const valid = StandardMerkleTree.verify(merkleRoot, ['string', 'string'], item.value, item.proof);
             if (!valid) {
                 allProofsValid = false;
-    if (opts.quote != null) {
-        const quoteMatches = quoteMatchesProvenText(opts.quote, quoteText, { mode: opts.mode });
-        return { verification, quoteText, allProofsValid, quoteMatches };
-    }
-
                 break;
             }
         }
     }
 
     const quoteText = sortedProofs.map((item) => item.value[1]).join('');
+
+    if (opts.quote != null) {
+        const quoteMatches = quoteMatchesProvenText(opts.quote, quoteText, { mode: opts.mode });
+        return { verification, quoteText, allProofsValid, quoteMatches };
+    }
 
     return { verification, quoteText, allProofsValid };
 }
