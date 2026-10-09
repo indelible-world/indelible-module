@@ -101,6 +101,41 @@ const { proofJson, onChain } = await proveQuote({
 downloadJson(proofJson, 'quote-proof.json'); // browser only
 ```
 
+### PDFs
+
+PDF support lives in `indelible/pdf` and needs the optional peers `pdfjs-dist` (read) and
+`pdf-lib` (embed): `npm install pdfjs-dist pdf-lib`.
+
+The attested artifact is the PDF's **canonical extracted text**, not its bytes, so embedding
+metadata never changes the CID. Verification re-extracts the text from the PDF itself;
+nothing about the text is stored inside the file.
+
+```js
+import { revealAttestation } from 'indelible';
+import { commitPdf, finalizePdf, verifyPdf, verifyPdfQuotes } from 'indelible/pdf';
+
+// Author: attest, then embed the ref + quote proofs.
+const commitResult = await commitPdf({ walletClient, publicClient, pdfBytes, account });
+// ...wait for the reveal delay...
+const revealResult = await revealAttestation({
+    walletClient, publicClient, pendingCommit: commitResult.pendingCommit, account,
+});
+const { pdfBytes: tagged, sidecar } = await finalizePdf({
+    publicClient, pdfBytes, commitResult, revealResult,
+    quotes: ['a passage ... with a gap'],
+});
+
+// Verify: embedded metadata is used automatically.
+const result = await verifyPdf(publicClient, tagged);
+const quotes = await verifyPdfQuotes(publicClient, tagged); // [{ quote, allProofsValid, quoteMatches, cidMatches }]
+
+// Third-party PDFs can't be modified: ship `sidecar` as `<name>.indelible.json` instead.
+await verifyPdf(publicClient, untouchedPdf, { sidecar });
+```
+
+Text extraction must be deterministic for a given PDF. `canonicalizePdfText` applies the same
+normalisation (NFC, ligatures, soft hyphens, whitespace) to text extracted elsewhere.
+
 ## API surface
 
 ### Constants — `indelible/constants`
@@ -137,6 +172,15 @@ downloadJson(proofJson, 'quote-proof.json'); // browser only
 - `getExistingAttestationIndex({ publicClient, ipfsHash, authority })`
 - `getDelegation({ publicClient, authority })`
 - `generateSalt()`, `buildSaltedHash(ipfsHash, address, salt)`
+
+### PDFs — `indelible/pdf`
+- `extractPdfText(pdfBytes)` / `canonicalizePdfText(text)`
+- `commitPdf({ pdfBytes, ...commitAttestationArgs })` / `finalizePdf({ publicClient, pdfBytes, commitResult, revealResult, quotes? })`
+- `embedIndelibleMetadata(pdfBytes, { attestationRef, quotes? })` / `embedQuoteProof(pdfBytes, { quote, proofJson })`
+- `readIndelibleMetadata(pdfBytes)` → `{ attestation, quotes } | null`
+- `parseSidecar(json)`
+- `verifyPdf(publicClient, pdfBytes, { sidecar?, authority? })` → `VerificationResult`
+- `verifyPdfQuotes(publicClient, pdfBytes, { sidecar?, mode? })`
 
 ### ABIs
 - `indelible/abi/taanq` — taanq attestation contract ABI (JSON)

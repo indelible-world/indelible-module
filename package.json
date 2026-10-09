@@ -35,6 +35,10 @@
       "types": "./types/ens.d.ts",
       "default": "./src/ens.js"
     },
+    "./pdf": {
+      "types": "./types/pdf.d.ts",
+      "default": "./src/pdf.js"
+    },
     "./abi/taanq": "./src/abi/taanqAbi.json",
     "./abi/ens": "./src/abi/ensAbi.json"
   },
@@ -45,6 +49,7 @@
   ],
   "scripts": {
     "build:types": "tsc",
+    "test": "node --test \"test/**/*.test.js\"",
     "prepublishOnly": "npm run build:types"
   },
   "keywords": [
@@ -58,7 +63,17 @@
   ],
   "license": "MIT",
   "peerDependencies": {
+    "pdf-lib": "^1.17.1",
+    "pdfjs-dist": ">=4.0.0",
     "viem": "^2.35.0"
+  },
+  "peerDependenciesMeta": {
+    "pdf-lib": {
+      "optional": true
+    },
+    "pdfjs-dist": {
+      "optional": true
+    }
   },
   "dependencies": {
     "@openzeppelin/merkle-tree": "^1.0.8",
@@ -72,6 +87,8 @@
     "access": "public"
   },
   "devDependencies": {
+    "pdf-lib": "^1.17.1",
+    "pdfjs-dist": "^6.4.299",
     "typescript": "^7.0.2"
   }
 }
