@@ -100,3 +100,19 @@ export {
     getExistingAttestationIndex,
     getDelegation,
 } from './publish.js';
+
+// PDF attestation and quote provenance (needs optional peers: pdfjs-dist, pdf-lib)
+export {
+    INDELIBLE_ATTACHMENT,
+    INDELIBLE_EXCLUDE_TAG,
+    canonicalizePdfText,
+    extractPdfText,
+    parseSidecar,
+    readIndelibleMetadata,
+    embedIndelibleMetadata,
+    embedQuoteProof,
+    commitPdf,
+    finalizePdf,
+    verifyPdf,
+    verifyPdfQuotes,
+} from './pdf.js';
