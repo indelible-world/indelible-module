@@ -7,6 +7,8 @@ import { VerificationResult, verifyCid, verifyQuoteProof, verifyRef } from './ve
 // metadata (which rewrites the file) does not change the CID.
 
 export const INDELIBLE_ATTACHMENT = 'indelible.json';
+// Marked-content tag publishers wrap around non-canonical text (PDF counterpart of data-indelible-exclude).
+export const INDELIBLE_EXCLUDE_TAG = 'IndelibleExclude';
 const QUOTE_ATTACHMENT_PREFIX = 'indelible-quote-';
 const QUOTE_ATTACHMENT_PATTERN = /^indelible-quote-.+\.json$/;
 
@@ -47,6 +49,7 @@ export function canonicalizePdfText(text) {
 
 /**
  * Extract the canonical text of a PDF (pages in order, lines joined by single spaces).
+ * Text inside marked content tagged `IndelibleExclude` (including nested content) is skipped.
  * Requires the optional peer dependency `pdfjs-dist`.
  *
  * @param {Uint8Array | ArrayBuffer} data
@@ -58,10 +61,20 @@ export async function extractPdfText(data) {
         let raw = '';
         for (let n = 1; n <= doc.numPages; n++) {
             const page = await doc.getPage(n);
-            const content = await page.getTextContent();
+            const content = await page.getTextContent({ includeMarkedContent: true });
+            // Open marked-content sections; end items are untagged, so track each begin's exclusion.
+            const stack = [];
+            let excludedDepth = 0;
             for (const item of content.items) {
-                if (typeof item.str !== 'string') continue;
-                raw += item.str + (item.hasEOL ? '\n' : '');
+                if (item.type === 'beginMarkedContent' || item.type === 'beginMarkedContentProps') {
+                    const excluded = item.tag === INDELIBLE_EXCLUDE_TAG;
+                    stack.push(excluded);
+                    if (excluded) excludedDepth++;
+                } else if (item.type === 'endMarkedContent') {
+                    if (stack.pop()) excludedDepth--;
+                } else if (typeof item.str === 'string' && excludedDepth === 0) {
+                    raw += item.str + (item.hasEOL ? '\n' : '');
+                }
             }
             raw += '\n';
         }

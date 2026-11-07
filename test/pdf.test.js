@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { PDFDocument, StandardFonts } from 'pdf-lib';
+import { PDFDocument, StandardFonts, beginMarkedContent, endMarkedContent } from 'pdf-lib';
 import { toHex } from 'viem';
 
 import { RESULT_CODE } from '../src/constants.js';
@@ -11,6 +11,7 @@ import {
     embedIndelibleMetadata,
     embedQuoteProof,
     extractPdfText,
+    INDELIBLE_EXCLUDE_TAG,
     parseSidecar,
     readIndelibleMetadata,
     verifyPdf,
@@ -29,6 +30,27 @@ async function makePdf(lines = LINES) {
     const font = await doc.embedFont(StandardFonts.Helvetica);
     const page = doc.addPage();
     lines.forEach((line, i) => page.drawText(line, { x: 40, y: 700 - i * 20, size: 12, font }));
+    return doc.save();
+}
+
+// Body text with a stamp wrapped in IndelibleExclude (optionally nested) on every page.
+async function makeStampedPdf(stamp, { pages = 1, nested = false } = {}) {
+    const doc = await PDFDocument.create();
+    const font = await doc.embedFont(StandardFonts.Helvetica);
+    for (let n = 0; n < pages; n++) {
+        const page = doc.addPage();
+        page.drawText(`Body of page ${n + 1}.`, { x: 40, y: 700, size: 12, font });
+        page.pushOperators(beginMarkedContent(INDELIBLE_EXCLUDE_TAG));
+        page.drawText(stamp, { x: 40, y: 300, size: 12, font });
+        if (nested) {
+            page.pushOperators(beginMarkedContent('Span'));
+            page.drawText('nested stamp', { x: 40, y: 280, size: 12, font });
+            page.pushOperators(endMarkedContent());
+            page.drawText('after nested', { x: 40, y: 260, size: 12, font });
+        }
+        page.pushOperators(endMarkedContent());
+        page.drawText(`Footer ${n + 1}.`, { x: 40, y: 100, size: 12, font });
+    }
     return doc.save();
 }
 
@@ -59,6 +81,42 @@ test('extractPdfText is stable across metadata embedding', async () => {
 
     const tagged = await embedIndelibleMetadata(pdf, { attestationRef: { ipfsCid: await createRawCIDv1(text) } });
     assert.equal(await extractPdfText(tagged), text);
+});
+
+test('text inside IndelibleExclude is not part of the canonical text', async () => {
+    const text = await extractPdfText(await makeStampedPdf('Accessed 2026-11-07 10:00'));
+    assert.equal(text, 'Body of page 1. Footer 1.');
+});
+
+test('nested marked content stays excluded until the outer section ends', async () => {
+    const text = await extractPdfText(await makeStampedPdf('Accessed', { nested: true }));
+    assert.equal(text, 'Body of page 1. Footer 1.');
+});
+
+test('exclusion applies on every page', async () => {
+    const text = await extractPdfText(await makeStampedPdf('Accessed', { pages: 3 }));
+    assert.equal(text, 'Body of page 1. Footer 1. Body of page 2. Footer 2. Body of page 3. Footer 3.');
+});
+
+test('different stamps yield the same CID, and verification survives re-stamping', async () => {
+    const a = await makeStampedPdf('Accessed 2026-11-07 10:00');
+    const b = await makeStampedPdf('Accessed 2026-11-08 09:30 by someone else');
+    const textA = await extractPdfText(a);
+    assert.equal(await createRawCIDv1(textA), await createRawCIDv1(await extractPdfText(b)));
+
+    const client = await mockClient(textA);
+    const sidecar = { ipfsCid: client.cid, authority: AUTHORITY, attestationIndex: 1 };
+    assert.deepEqual((await verifyPdf(client, b, { sidecar })).resultCode, [RESULT_CODE.VERIFIED]);
+});
+
+test('unmarked stamp text still changes the CID', async () => {
+    const doc = await PDFDocument.create();
+    const font = await doc.embedFont(StandardFonts.Helvetica);
+    const page = doc.addPage();
+    page.drawText('Body of page 1.', { x: 40, y: 700, size: 12, font });
+    page.drawText('Accessed 2026-11-07', { x: 40, y: 300, size: 12, font });
+    const text = await extractPdfText(await doc.save());
+    assert.notEqual(text, 'Body of page 1.');
 });
 
 test('parseSidecar validates input', () => {

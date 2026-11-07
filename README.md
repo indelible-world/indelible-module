@@ -133,6 +133,13 @@ const quotes = await verifyPdfQuotes(publicClient, tagged); // [{ quote, allProo
 await verifyPdf(publicClient, untouchedPdf, { sidecar });
 ```
 
+**Excluding non-canonical text** (the PDF counterpart of `data-indelible-exclude`): publishers
+wrap per-access stamps, "downloaded by" footers and similar in a marked-content section tagged
+`IndelibleExclude` (`/IndelibleExclude BMC ... EMC` in the content stream; with `pdf-lib`,
+`page.pushOperators(beginMarkedContent('IndelibleExclude'))` and `endMarkedContent()`). Text
+inside, including nested marked content, is skipped, so differently stamped copies of a
+document share one CID. Unmarked stamp text is part of the document and changes the CID.
+
 Text extraction must be deterministic for a given PDF. `canonicalizePdfText` applies the same
 normalisation (NFC, ligatures, soft hyphens, whitespace) to text extracted elsewhere.
 
@@ -174,7 +181,7 @@ normalisation (NFC, ligatures, soft hyphens, whitespace) to text extracted elsew
 - `generateSalt()`, `buildSaltedHash(ipfsHash, address, salt)`
 
 ### PDFs — `indelible/pdf`
-- `extractPdfText(pdfBytes)` / `canonicalizePdfText(text)`
+- `extractPdfText(pdfBytes)` / `canonicalizePdfText(text)` / `INDELIBLE_EXCLUDE_TAG`
 - `commitPdf({ pdfBytes, ...commitAttestationArgs })` / `finalizePdf({ publicClient, pdfBytes, commitResult, revealResult, quotes? })`
 - `embedIndelibleMetadata(pdfBytes, { attestationRef, quotes? })` / `embedQuoteProof(pdfBytes, { quote, proofJson })`
 - `readIndelibleMetadata(pdfBytes)` → `{ attestation, quotes } | null`

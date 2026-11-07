@@ -104,6 +104,7 @@ export {
 // PDF attestation and quote provenance (needs optional peers: pdfjs-dist, pdf-lib)
 export {
     INDELIBLE_ATTACHMENT,
+    INDELIBLE_EXCLUDE_TAG,
     canonicalizePdfText,
     extractPdfText,
     parseSidecar,
